@@ -1,59 +1,101 @@
-[Healthgrades Scraper](https://apify.com/h4sh/healthgrades-scraper?fpr=data)
+[Healthgrades Scraper](https://apify.com/lulzasaur/healthgrades-scraper?fpr=data)
 
-Healthgrades doctor/profile scraper for healthcare lead generation, physician directory monitoring, and ratings research. Supports Healthgrades search URLs, specialty/location search, and direct doctor profile URLs. Uses HTTP first, then Camoufox browser fallback for protected pages.
+Scrape doctor and healthcare provider listings from [Healthgrades.com](https://www.healthgrades.com). Extract detailed provider information including names, specialties, ratings, reviews, contact details, NPI numbers, and more.
 
-## Features
+## What data can you extract?
 
-- Conservative default run size for Apify daily tests and smoke tests.
-- Residential proxy-ready configuration with US defaults.
-- HTTP/HTML first where practical, with Camoufox browser fallback for protected pages.
-- Multiple extraction strategies: embedded JSON, JSON-LD/app state, URL-pattern discovery, and DOM card parsing.
-- Clean structured JSON pushed to the default dataset.
+For each provider listing, the scraper extracts:
 
-## Input
+| Field | Description |
+| --- | --- |
+| `displayName` | Full name with credentials (e.g., "Dr. John Smith, MD") |
+| `specialty` | Primary medical specialty |
+| `specialties` | All listed specialties |
+| `overallRating` | Patient rating (1-5 scale) |
+| `reviewCount` | Number of patient reviews |
+| `address` | Street address |
+| `city` / `state` / `zip` | Location details |
+| `phone` | Primary phone number |
+| `officeName` | Practice or office name |
+| `npi` | National Provider Identifier |
+| `acceptingNewPatients` | Whether accepting new patients |
+| `telehealthAvailable` | Telehealth availability |
+| `gender` | Provider gender |
+| `age` | Provider age |
+| `yearsExperience` | Years since graduation |
+| `aboutMe` | Provider bio |
+| `profileUrl` | Full Healthgrades profile link |
+| `insuranceCodes` | Insurance/payor codes |
+
+## Input parameters
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `specialty` | string | `"doctor"` | Specialty to search (doctor, dentist, dermatologist, cardiologist, etc.) |
+| `location` | string | `"Denver, CO"` | City and state |
+| `insurance` | string |  | Optional insurance provider filter |
+| `acceptingNewPatients` | boolean |  | Only show providers accepting new patients |
+| `maxResults` | integer | `100` | Maximum results (up to 1000) |
+| `proxyConfiguration` | object |  | Proxy settings |
+
+## Example input
 
 ```
 {
-  "maxResults": 10,
-  "proxyConfiguration": {
-    "useApifyProxy": true,
-    "apifyProxyGroups": [
-      "RESIDENTIAL"
-    ],
-    "apifyProxyCountry": "US"
-  },
-  "specialty": "family-medicine",
-  "location": "new-york-ny"
+    "specialty": "dentist",
+    "location": "New York, NY",
+    "maxResults": 50
 }
 ```
-
-See `.actor/input_schema.json` for all options.
-
-## Output fields
-
-`name`, `specialty`, `rating`, `reviewCount`, `address`, `city`, `state`, `phone`, `profileUrl`, `sourceUrl`.
 
 ## Example output
 
 ```
 {
-  "sourceUrl": "https://example.com/search",
-  "scrapedAt": "2026-04-28T00:00:00+00:00"
+    "displayName": "Dr. Jane Smith, DDS",
+    "specialty": "Dentistry",
+    "specialties": ["Dentistry", "Cosmetic Dentistry"],
+    "overallRating": 4.2,
+    "reviewCount": 48,
+    "address": "123 Main St",
+    "city": "New York",
+    "state": "NY",
+    "zip": "10001",
+    "phone": "(212) 555-0100",
+    "npi": "1234567890",
+    "acceptingNewPatients": true,
+    "telehealthAvailable": false,
+    "gender": "Female",
+    "profileUrl": "https://www.healthgrades.com/physician/dr-jane-smith-abc123"
 }
 ```
 
-## Pricing guidance
+## Supported specialties
 
-## 💊 Pairs Well With
+- `doctor` — all physicians
+- `dentist` — general dentistry
+- `dermatologist` — skin care
+- `cardiologist` — heart
+- `pediatrician` — children
+- `orthopedic-surgeon` — bones/joints
+- `psychiatrist` — mental health
+- `ophthalmologist` — eye care
+- `neurologist` — brain/nervous system
+- `urologist` — urinary tract
+- `ob-gyn` — obstetrics/gynecology
+- `gastroenterologist` — digestive system
+- `pulmonologist` — lungs
+- `endocrinologist` — hormones
+- `oncologist` — cancer
+- And many more...
 
-**[GoodRx Drug Price Scraper](https://apify.com/h4sh/goodrx-drug-price-scraper)** — pharmacy pricing for prescription drugs in 11 seconds.
+## How it works
 
-Together they form the **Healthcare Data Pack**: provider intelligence + drug affordability data. Enterprise pricing for >100K combined records/month — contact via Apify support.
+The scraper fetches Healthgrades search result pages and extracts provider data from the React Server Components (RSC) streaming payload. Healthgrades uses Next.js App Router with server-side rendering, embedding structured JSON data directly in the page HTML.
 
-## Pricing guidance
+## Notes
 
-Recommended Apify Store PPE pricing: **$2 per 1,000 results** for search-result records. Increase pricing if detail-page enrichment is enabled in a future version.
-
-## Limitations
-
-The target site may apply WAF, Cloudflare, PerimeterX, or similar anti-bot controls. The actor logs exact block evidence, attempts an alternative pattern/browser fallback, and exits gracefully if no data can be retrieved.
+- Results are limited to 20 per page (Healthgrades default)
+- Some fields (board certification, education, languages) are only available on individual profile pages, not in search results
+- Insurance codes are internal Healthgrades payor codes, not human-readable names
+- The scraper respects rate limits with polite delays between page requests
